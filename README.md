@@ -9,6 +9,8 @@ This project is a deep learning-based image classification system that detects b
 
 It uses a Convolutional Neural Network (CNN) built with TensorFlow/Keras and provides a clean Streamlit-based web interface for real-time predictions and dataset analysis.
 
+> ℹ️ Added comments For better understanding
+
 ---
 
 ## 📁 Project Structure
