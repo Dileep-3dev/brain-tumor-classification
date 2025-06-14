@@ -1,0 +1,14 @@
+# Model files
+*.keras
+*.h5
+
+# Logs & plots
+*.csv
+*.png
+*.log
+
+# Streamlit cache
+.streamlit/
+
+# System files
+.DS_Store
