@@ -1,0 +1,52 @@
+{
+  "input_size": [
+    96,
+    96
+  ],
+  "classes": [
+    "glioma_tumor",
+    "meningioma_tumor",
+    "no_tumor",
+    "pituitary_tumor"
+  ],
+  "parameters": 423748,
+  "test_accuracy": 0.8845,
+  "test_loss": 0.7969,
+  "per_class_recall": {
+    "glioma_tumor": 0.77,
+    "meningioma_tumor": 0.8242,
+    "no_tumor": 1.0,
+    "pituitary_tumor": 0.9171
+  },
+  "confusion_matrix": [
+    [
+      308,
+      19,
+      68,
+      5
+    ],
+    [
+      8,
+      347,
+      52,
+      14
+    ],
+    [
+      0,
+      0,
+      510,
+      0
+    ],
+    [
+      0,
+      12,
+      19,
+      343
+    ]
+  ],
+  "train_images": 6865,
+  "val_images": 1717,
+  "test_images": 1705,
+  "size_mb": 4.93,
+  "note": "Demo model at 96x96. training.py holds the full 224x224 design."
+}
