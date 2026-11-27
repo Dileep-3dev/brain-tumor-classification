@@ -1,6 +1,4 @@
 import streamlit as st
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 import numpy as np
 from PIL import Image, ImageEnhance
 import matplotlib.pyplot as plt
@@ -15,19 +13,28 @@ from collections import Counter
 MODEL_CANDIDATES = ['models/brain_tumor_cnn.keras', 'best_model.keras', 'brain_tumor_model.keras']
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_trained_model():
+    # TensorFlow is imported here rather than at the top of the file. The
+    # import alone takes ~30 seconds on a CPU-only machine, and at module
+    # level it blocks Streamlit from drawing anything at all — the page just
+    # looks blank and broken until it finishes.
+    import tensorflow as tf
+
     for path in MODEL_CANDIDATES:
         if os.path.exists(path):
             return tf.keras.models.load_model(path), path
     return None, None
 
 
-model, MODEL_PATH = load_trained_model()
+# Draw the header before the slow work, so the page is never blank.
+st.set_page_config(page_title="Brain Tumor Classification", page_icon="🧠")
+st.title("🧠 Brain Tumor Classification")
+
+with st.spinner("Loading TensorFlow and the trained model — the first run takes about 30 seconds…"):
+    model, MODEL_PATH = load_trained_model()
 
 if model is None:
-    st.set_page_config(page_title="Brain Tumor Classification", page_icon="🧠")
-    st.title("🧠 Brain Tumor Classification")
     st.error("No trained model found, so predictions are unavailable.")
     st.markdown("Train one from the images already included in `data/` — this writes `best_model.keras`:")
     st.code("python training.py", language="bash")
@@ -99,11 +106,12 @@ def plot_dataset_distribution(dataset_distribution, dataset_type):
 
 # Streamlit interface
 def main():
-    st.title("Brain Tumor Detection")
-    st.write("Upload an MRI image to predict whether it contains a brain tumor.")
+    st.caption("Upload an MRI scan to classify it into one of four categories.")
 
     # Dataset Analysis Section
-    dataset_path = 'F:/New folderDileep/data'
+    # Relative to this file, so it works on any machine. It used to be an
+    # absolute path to the original author's F: drive.
+    dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
     st.subheader("Dataset Analysis")
     if st.button("Show Dataset Insights"):
         train_distribution = analyze_dataset(dataset_path, "train")
