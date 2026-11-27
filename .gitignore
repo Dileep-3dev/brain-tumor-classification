@@ -17,3 +17,7 @@
 
 # System files
 .DS_Store
+
+# Decoded image cache written by train_compact.py (~83 MB).
+# Regenerated automatically on first run.
+.cache_images.npz
