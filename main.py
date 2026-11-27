@@ -76,6 +76,8 @@ def display_model_summary():
 def analyze_dataset(dataset_path, dataset_type):
     data_dir = os.path.join(dataset_path, dataset_type)
     class_counts = {}
+    if not os.path.isdir(data_dir):
+        return class_counts  # dataset not present — callers render an empty chart
     for class_label in os.listdir(data_dir):
         class_dir = os.path.join(data_dir, class_label)
         if os.path.isdir(class_dir):

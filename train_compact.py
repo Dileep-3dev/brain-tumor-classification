@@ -3,10 +3,16 @@ Trains the small model that ships with this repository.
 
 training.py builds a 224x224 network ending in Flatten -> Dense(512), which is
 roughly 19 million parameters in that one layer and about 75 MB on disk - too
-large to commit. This script keeps the same idea but uses a 160x160 input and
-GlobalAveragePooling2D instead of Flatten, giving a model of a few hundred
-thousand parameters that fits comfortably in git, so the Streamlit app works
-immediately after `git clone`.
+large to commit, and several hours per run on a CPU.
+
+This script trades resolution for reach: a 96x96 input and
+GlobalAveragePooling2D instead of Flatten. That gives ~424K parameters, about
+2 MB on disk, and a run that finishes in minutes on a laptop rather than
+hours. The Streamlit app therefore works immediately after `git clone`, and
+anyone can retrain it without a GPU.
+
+It is a demo model, not the best model this dataset can support. For the
+higher-resolution version, run training.py and give it time.
 
 As in training.py, validation comes out of the training images and the test
 directory is only touched once, at the end.
@@ -29,9 +35,9 @@ from tensorflow.keras.layers import (BatchNormalization, Conv2D, Dense, Dropout,
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-IMG = (160, 160)
-BATCH = 32
-EPOCHS = 12
+IMG = (96, 96)
+BATCH = 64
+EPOCHS = 8
 OUT = Path("models")
 SEED = 42
 
@@ -80,7 +86,7 @@ ckpt = OUT / "brain_tumor_cnn.keras"
 model.fit(
     train_gen, validation_data=val_gen, epochs=EPOCHS, class_weight=class_weight,
     callbacks=[
-        EarlyStopping(monitor="val_loss", patience=4, restore_best_weights=True),
+        EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True),
         ModelCheckpoint(ckpt, monitor="val_loss", save_best_only=True),
         ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=2, min_lr=1e-5),
     ],
