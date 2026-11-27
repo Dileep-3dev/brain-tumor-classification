@@ -8,17 +8,51 @@ import pandas as pd
 import os
 from collections import Counter
 
-# Load the trained model
-model = tf.keras.models.load_model('best_model.keras')
+# Load the trained model.
+# Model weights are not committed (they are large and reproducible), so look
+# for either the compact model that ships with the repo or one produced by a
+# local training run, and explain what to do if neither is present.
+MODEL_CANDIDATES = ['models/brain_tumor_cnn.keras', 'best_model.keras', 'brain_tumor_model.keras']
 
-# Class labels
+
+@st.cache_resource
+def load_trained_model():
+    for path in MODEL_CANDIDATES:
+        if os.path.exists(path):
+            return tf.keras.models.load_model(path), path
+    return None, None
+
+
+model, MODEL_PATH = load_trained_model()
+
+if model is None:
+    st.set_page_config(page_title="Brain Tumor Classification", page_icon="🧠")
+    st.title("🧠 Brain Tumor Classification")
+    st.error("No trained model found, so predictions are unavailable.")
+    st.markdown("Train one from the images already included in `data/` — this writes `best_model.keras`:")
+    st.code("python training.py", language="bash")
+    st.caption(
+        "Training takes a while on CPU. Once it finishes, reload this page. "
+        "The app checks for models/brain_tumor_cnn.keras, best_model.keras and brain_tumor_model.keras."
+    )
+    st.stop()
+
+# Class labels — must match the alphabetical folder order used by
+# flow_from_directory during training.
 class_labels = ['glioma_tumor', 'meningioma_tumor', 'no_tumor', 'pituitary_tumor']
+
+# The input size the loaded model expects, read from the model itself rather
+# than hardcoded, so a model trained at a different resolution still works.
+_shape = model.input_shape
+IMG_SIZE = (_shape[1], _shape[2]) if _shape[1] and _shape[2] else (224, 224)
+
 
 # Function to preprocess the image for prediction
 def preprocess_image(img):
-    img = img.resize((224, 224))  # Resize to the size expected by the model
-    img = np.array(img) / 255.0   # Normalize the image
-    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    img = img.convert('RGB')          # drop alpha / handle greyscale PNGs
+    img = img.resize(IMG_SIZE)        # match what the model was trained on
+    img = np.array(img) / 255.0       # normalize exactly as in training
+    img = np.expand_dims(img, axis=0)  # add batch dimension
     return img
 
 # Function to apply image enhancement

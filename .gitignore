@@ -1,6 +1,11 @@
-# Model files
+# Model files. Training output is large and reproducible, so it stays out of
+# git -- except the compact model the Streamlit app ships with (~2 MB).
 *.keras
 *.h5
+!models/brain_tumor_cnn.keras
+
+# Keep the model card describing that compact model.
+!models/model_card.json
 
 # Logs & plots
 *.csv

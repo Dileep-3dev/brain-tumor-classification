@@ -13,9 +13,15 @@ import pandas as pd
 train_dir = 'data/train'
 test_dir = 'data/test'
 
-# Image preprocessing and augmentation
+# Image preprocessing and augmentation.
+# validation_split carves a validation set out of the TRAINING images, so the
+# test set stays genuinely held out. Previously the test set was passed as
+# validation_data while EarlyStopping and ModelCheckpoint both monitored
+# val_loss -- which means model selection happened on the test set, making any
+# accuracy reported on it optimistic.
 train_datagen = ImageDataGenerator(
     rescale=1./255,
+    validation_split=0.2,
     rotation_range=30,
     width_shift_range=0.2,
     height_shift_range=0.2,
@@ -27,12 +33,25 @@ train_datagen = ImageDataGenerator(
 
 test_datagen = ImageDataGenerator(rescale=1./255)
 
-# Generate the training and testing data
+# Generate the training, validation and testing data.
+# Validation comes out of the training images via validation_split, so the
+# test directory is never seen until the final evaluation.
 train_generator = train_datagen.flow_from_directory(
     train_dir,
     target_size=(224, 224),
     batch_size=32,
-    class_mode='categorical'
+    class_mode='categorical',
+    subset='training',
+    seed=42
+)
+
+val_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(224, 224),
+    batch_size=32,
+    class_mode='categorical',
+    subset='validation',
+    seed=42
 )
 
 test_generator = test_datagen.flow_from_directory(
@@ -82,11 +101,17 @@ history = model.fit(
     train_generator,
     steps_per_epoch=train_generator.samples // train_generator.batch_size,
     epochs=20,
-    validation_data=test_generator,
-    validation_steps=test_generator.samples // test_generator.batch_size,
+    validation_data=val_generator,
+    validation_steps=max(1, val_generator.samples // val_generator.batch_size),
     class_weight=class_weight_dict,
     callbacks=[early_stopping, checkpoint]
 )
+
+# Only now, after training and model selection are finished, touch the test set.
+print("\nEvaluating on the held-out test set (used exactly once):")
+test_loss, test_acc = model.evaluate(test_generator, verbose=0)
+print(f"  test accuracy: {test_acc:.4f}")
+print(f"  test loss    : {test_loss:.4f}")
 
 # Save the trained model in the Keras format
 model.save('brain_tumor_model.keras')
@@ -107,7 +132,7 @@ def plot_training_history(history):
     plt.legend()
     plt.grid()
     plt.savefig('accuracy_plot.png')
-    plt.show()
+    plt.close()
 
     # Loss Plot
     plt.figure(figsize=(10, 5))
@@ -119,7 +144,7 @@ def plot_training_history(history):
     plt.legend()
     plt.grid()
     plt.savefig('loss_plot.png')
-    plt.show()
+    plt.close()
 
 # Generate training history plots
 plot_training_history(history)
